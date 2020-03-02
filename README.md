@@ -1,5 +1,5 @@
-peasoup
-=======
+peasoup_32
+==========
 
 C++/CUDA GPU pulsar searching library 
 
