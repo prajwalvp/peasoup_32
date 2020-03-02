@@ -324,8 +324,8 @@ int main(int argc, char **argv)
 
 
 //Write out a dedispersed time series file from the dedispersion tials
-  unsigned int* data_ptr = trials[0].get_data();
-  Utils::dump_host_buffer<unsigned int>(data_ptr,trials.get_nsamps(),"dedispersed_timeseries_new");
+//  unsigned int* data_ptr = trials[0].get_data();
+//  Utils::dump_host_buffer<unsigned int>(data_ptr,trials.get_nsamps(),"dedispersed_timeseries_new");
 
   if (args.progress_bar)
     printf("Complete (execution time %.2f s)\n",timers["dedispersion"].getTime());
