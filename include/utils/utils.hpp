@@ -192,4 +192,61 @@ public:
   }
 };
 
+class JerkPlan {
+private:
+  float jerk_lo;
+  float jerk_hi;
+  float tol;
+  float pulse_width;
+  unsigned int nsamps;
+  float tsamp;
+  float cfreq;
+  float cfreq_GHz;
+  float bw;
+  float tsamp_us;
+  float tobs;
+
+public:
+  JerkPlan(float jerk_lo, float jerk_hi, float tol,
+		   float pulse_width, unsigned int nsamps,
+		   float tsamp, float cfreq, float bw)
+    :jerk_lo(jerk_lo),jerk_hi(jerk_hi),tol(tol),
+     pulse_width(pulse_width),nsamps(nsamps),
+     tsamp(tsamp),cfreq(cfreq),bw(fabs(bw))
+  {
+    tsamp_us = 1.0e6 * tsamp;
+    tobs = nsamps*tsamp;
+    cfreq_GHz = 1.0e-3 * cfreq;
+    pulse_width /= 1.0e3;
+  }
+  
+  void generate_jerk_list(float dm,std::vector<float>& jerk_list){
+    if (jerk_hi==jerk_lo){
+      jerk_list.clear();
+      jerk_list.push_back(0.0);
+      return;
+    }
+
+    float tdm = pow(8.3*bw/pow(cfreq,3.0)*dm,2.0);
+    float tpulse = pulse_width * pulse_width;
+    float ttsamp = tsamp * tsamp;
+    float w_us = sqrt(tdm+tpulse+ttsamp);
+    //float alt_a = 2.0 * w_us * 1.0e-6 * 24.0 * 299792458.0/tobs/tobs * sqrt((tol*tol)-1.0);
+    float alt_j = 2.0 * w_us * 1.0e-6 * 24.0 * 12.0* 299792458.0/tobs/tobs/tobs * sqrt((tol*tol)-1.0); ////!!! Need to get the proper formula for this
+    unsigned int njerks = (unsigned int)((float)(jerk_hi-jerk_lo))/alt_j;
+    jerk_list.clear();
+    jerk_list.reserve(njerks+10);
+    if (jerk_hi!=0 && jerk_lo!=0)
+      jerk_list.push_back(0.0); //explicitly force zero jerk.
+    float jerk = jerk_lo;
+    while (jerk<jerk_hi){
+      jerk_list.push_back(jerk);
+      jerk+=alt_j;
+    }
+    jerk_list.push_back(jerk_hi);
+    return;
+  }
+};
+
+
 

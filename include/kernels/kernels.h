@@ -131,6 +131,15 @@ void device_resampleII(float * d_idata,
                      unsigned int block_size,
                      unsigned int max_blocks);
 
+void device_resampleIII(float * d_idata,
+                     float * d_odata,
+                     size_t length,
+                     float a,
+                     float j,
+                     float timestep,
+                     unsigned int block_size,
+                     unsigned int max_blocks);
+
 int device_find_peaks(int n,
 		      int start_index,
 		      float * d_dat,

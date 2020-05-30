@@ -86,6 +86,10 @@ public:
     search_options.append(XML::Element("acc_end",args.acc_end));
     search_options.append(XML::Element("acc_tol",args.acc_tol));
     search_options.append(XML::Element("acc_pulse_width",args.acc_pulse_width));
+    search_options.append(XML::Element("jerk_start",args.jerk_start));
+    search_options.append(XML::Element("jerk_end",args.jerk_end));
+    search_options.append(XML::Element("jerk_tol",args.jerk_tol));
+    search_options.append(XML::Element("jerk_pulse_width",args.jerk_pulse_width));
     search_options.append(XML::Element("boundary_5_freq",args.boundary_5_freq));
     search_options.append(XML::Element("boundary_25_freq",args.boundary_25_freq));
     search_options.append(XML::Element("nharmonics",args.nharmonics));
@@ -166,6 +170,22 @@ public:
     root.append(acc_trials);
   }
 
+
+  void add_jerk_list(std::vector<float>& jerks){
+    XML::Element jerk_trials("jerk_trials");
+    jerk_trials.add_attribute("count",jerks.size());
+    jerk_trials.add_attribute("DM",0);
+    for(int ii=0;ii<jerks.size();ii++){
+      XML::Element trial("trial");
+      trial.add_attribute("id",ii);
+      trial.set_text(jerks[ii]);
+      jerk_trials.append(trial);
+    }
+    root.append(jerk_trials);
+  }
+
+
+
   void add_candidates(std::vector<Candidate>& candidates, 
 		      std::map<unsigned,long int> byte_map)
   {
@@ -177,6 +197,7 @@ public:
       cand.append(XML::Element("opt_period",candidates[ii].opt_period));
       cand.append(XML::Element("dm",candidates[ii].dm));
       cand.append(XML::Element("acc",candidates[ii].acc));
+      cand.append(XML::Element("jerk",candidates[ii].jerk));
       cand.append(XML::Element("nh",candidates[ii].nh));
       cand.append(XML::Element("snr",candidates[ii].snr));
       cand.append(XML::Element("folded_snr",candidates[ii].folded_snr));
@@ -201,6 +222,7 @@ public:
       cand.append(XML::Element("opt_period",candidates[ii].opt_period));
       cand.append(XML::Element("dm",candidates[ii].dm));
       cand.append(XML::Element("acc",candidates[ii].acc));
+      cand.append(XML::Element("jerk",candidates[ii].jerk));
       cand.append(XML::Element("nh",candidates[ii].nh));
       cand.append(XML::Element("snr",candidates[ii].snr));
       cand.append(XML::Element("folded_snr",candidates[ii].folded_snr));

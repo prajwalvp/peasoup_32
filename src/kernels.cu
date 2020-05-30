@@ -316,6 +316,10 @@ inline __device__ unsigned long getAcceleratedIndexII(double accel_fact, double 
   return __double2ull_rn(id + id*accel_fact*(id-size));
 }
 
+inline __device__ unsigned long getAcceleratedIndexIII(double accel_fact, double jerk_fact,double size,
+						      unsigned long id){
+  return __double2ull_rn(id + id*accel_fact*(id-size) + id*id*jerk_fact*(id-size));
+}
 
 __global__ void resample_kernel(float* input_d,
 				float* output_d,
@@ -345,6 +349,25 @@ __global__ void resample_kernelII(float* input_d,
   }
 }
 
+__global__ void resample_kernelIII(float* input_d,
+				  float* output_d,
+				  double accel_fact,
+                                  double jerk_fact, 
+				  double size)
+				  
+{
+  for( unsigned long idx = blockIdx.x*blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x*gridDim.x )
+  {
+    unsigned long out_idx = getAcceleratedIndexIII(accel_fact,jerk_fact,size,idx);
+    output_d[idx] = input_d[out_idx];
+  }
+}
+
+
+
+
+
+
 void device_resampleII(float * d_idata, float * d_odata,
                      size_t size, float a,
                      float tsamp, unsigned int max_threads,
@@ -359,6 +382,24 @@ void device_resampleII(float * d_idata, float * d_odata,
 					      accel_fact,
 					      (double) size);
   ErrorChecker::check_cuda_error("Error from device_resampleII");
+}
+
+void device_resampleIII(float * d_idata, float * d_odata,
+                     size_t size, float a, float j,
+                     float tsamp, unsigned int max_threads,
+                     unsigned int max_blocks)
+{
+  
+  double accel_fact = ((a*tsamp) / (2 * 299792458.0));
+  double jerk_fact = ((j*tsamp*tsamp) / (6 * 299792458.0));
+
+  unsigned blocks = size/max_threads + 1;
+  if (blocks > max_blocks)
+    blocks = max_blocks;
+  resample_kernelIII<<< blocks,max_threads >>>(d_idata, d_odata,
+					      accel_fact, jerk_fact,
+					      (double) size);
+  ErrorChecker::check_cuda_error("Error from device_resampleIII");
 }
 
 void device_resample(float * d_idata, float * d_odata,

@@ -18,6 +18,10 @@ struct CmdLineOptions {
   float acc_end;
   float acc_tol;
   float acc_pulse_width;
+  float jerk_start;
+  float jerk_end;
+  float jerk_tol;
+  float jerk_pulse_width;
   float boundary_5_freq;
   float boundary_25_freq;
   int nharmonics;
@@ -132,6 +136,22 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
                                                  "Minimum pulse width for which acc_tol is valid",
 						 false, 64.0, "float (us)",cmd);
 
+      TCLAP::ValueArg<float> arg_jerk_start("", "jerk_start",
+					   "First jerk to resample to",
+					   false, 0.0, "float", cmd);
+
+      TCLAP::ValueArg<float> arg_jerk_end("", "jerk_end",
+					 "Last jerk to resample to",
+					 false, 0.0, "float", cmd);
+
+      TCLAP::ValueArg<float> arg_jerk_tol("", "jerk_tol",
+					 "Jerk smearing tolerance (1.11=10%)",
+					 false, 1.10, "float",cmd);
+
+      TCLAP::ValueArg<float> arg_jerk_pulse_width("", "jerk_pulse_width",
+                                                 "Minimum pulse width for which jerk_tol is valid",
+						 false, 64.0, "float (us)",cmd);
+
       TCLAP::ValueArg<float> arg_boundary_5_freq("", "boundary_5_freq",
                                                  "Frequency at which to switch from median5 to median25",
                                                  false, 0.05, "float", cmd);
@@ -188,6 +208,10 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
       args.acc_end           = arg_acc_end.getValue();
       args.acc_tol           = arg_acc_tol.getValue();
       args.acc_pulse_width   = arg_acc_pulse_width.getValue();
+      args.jerk_start         = arg_jerk_start.getValue();
+      args.jerk_end           = arg_jerk_end.getValue();
+      args.jerk_tol           = arg_jerk_tol.getValue();
+      args.jerk_pulse_width   = arg_jerk_pulse_width.getValue();
       args.boundary_5_freq   = arg_boundary_5_freq.getValue();
       args.boundary_25_freq  = arg_boundary_25_freq.getValue();
       args.nharmonics        = arg_nharmonics.getValue();
