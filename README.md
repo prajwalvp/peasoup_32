@@ -5,7 +5,7 @@ C++/CUDA GPU pulsar searching library
 
 The Master branch has been incorporated as the default source code in the original GitHub repository  (https://github.com/ewanbarr/peasoup/)
 
-**peasoup** has been modified for handling 32 bit dedispersed timeseries. This change was necessary to ensure that the scaling done by the dedisp library does not lead to severe compression of the dynamic range of the timeseries. This change has already demonstrated a siginificant change in the detection SNR while doing the Fourier domain search after resampling.
+**peasoup** has been modified for handling 32 bit dedispersed timeseries. This change was necessary to ensure that the scaling done by the dedisp library does not lead to severe compression of the dynamic range of the timeseries. This change has already demonstrated a siginificant change in the detection SNR while doing the Fourier search after resampling
 
 
 There are two other branches in this repository which has been setup to adaptively handle TRAPUM(www.trapum.org) specific needs
