@@ -105,7 +105,7 @@ public:
     XML::Element info("misc_info");
     char buf[128];
     getlogin_r(buf,128);
-    info.append(XML::Element("username",buf));
+    //info.append(XML::Element("username",buf)); # Removed username due to non ascii output
     std::time_t t = std::time(NULL);
     std::strftime(buf, 128, "%Y-%m-%d-%H:%M", std::localtime(&t));
     info.append(XML::Element("local_datetime",buf));
