@@ -24,6 +24,7 @@
 #include <thrust/system/cuda/vector.h>
 #include <thrust/system/cuda/execution_policy.h>
 #include <map>
+#include <typeinfo>
 
 #define SQRT2 1.4142135623730951f
 
@@ -316,6 +317,33 @@ inline __device__ unsigned long getAcceleratedIndexII(double accel_fact, double 
   return __double2ull_rn(id + id*accel_fact*(id-size));
 }
 
+//inline __device__ unsigned long getAcceleratedIndexIII(double accel_fact, double jerk_fact,double size,
+//						      unsigned long id){
+ // return __double2ull_rn(id + id*accel_fact*(id-size) + id*id*jerk_fact*(id-size));
+//}
+
+inline __device__ unsigned long getAcceleratedIndexIII(double accel_fact, double jerk_fact,double size,
+						      unsigned long id){
+  return __double2ull_rn(id + id*accel_fact*(id-size) + (size/2.0-id)*(size/2.0-id)*jerk_fact*(size/2.0-id));
+}
+
+inline __device__ unsigned long getAcceleratedIndexIV(double accel_fact, double jerk_fact,double size,
+						      unsigned long id){
+  signed long value = __double2ll_rn(id + id*accel_fact*(id-size) + (size/2.0-id)*(size/2.0-id)*jerk_fact*(size/2.0-id));
+
+  if(value < 0)
+   {
+    printf("%lld\n",value);
+    //printf("Here!");
+    value = 0;
+   }
+  else if (value > size-1)
+      value = size-1;
+  else
+      value=value;
+  unsigned long new_value = value;
+  return new_value; 
+}
 
 __global__ void resample_kernel(float* input_d,
 				float* output_d,
@@ -345,6 +373,33 @@ __global__ void resample_kernelII(float* input_d,
   }
 }
 
+__global__ void resample_kernelIII(float* input_d,
+				  float* output_d,
+				  double accel_fact,
+                                  double jerk_fact, 
+				  double size)
+				  
+{
+   
+  //std::cout << typeid(size).name() << "\n";
+  //printf("size is %f",size);
+  for( unsigned long idx = blockIdx.x*blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x*gridDim.x )
+  {
+    unsigned long out_idx;
+    if(jerk_fact < 0.0)  
+        out_idx = getAcceleratedIndexIV(accel_fact,jerk_fact,size,idx);
+    else
+        out_idx = getAcceleratedIndexIII(accel_fact,jerk_fact,size,idx);
+    //printf("%lu %lu \n",idx,out_idx);
+    output_d[idx] = input_d[out_idx];
+  }
+}
+
+
+
+
+
+
 void device_resampleII(float * d_idata, float * d_odata,
                      size_t size, float a,
                      float tsamp, unsigned int max_threads,
@@ -359,6 +414,26 @@ void device_resampleII(float * d_idata, float * d_odata,
 					      accel_fact,
 					      (double) size);
   ErrorChecker::check_cuda_error("Error from device_resampleII");
+}
+
+void device_resampleIII(float * d_idata, float * d_odata,
+                     size_t size, float a, float j,
+                     float tsamp, unsigned int max_threads,
+                     unsigned int max_blocks)
+{
+  
+  double accel_fact = ((a*tsamp) / (2 * 299792458.0));
+  //printf("tsamp: %.*f\n",20,tsamp);
+  double jerk_fact = ((j*tsamp*tsamp) / (6 * 299792458.0));
+  //double size_by_2  = (double)size/2.0;
+
+  unsigned blocks = size/max_threads + 1;
+  if (blocks > max_blocks)
+    blocks = max_blocks;
+  resample_kernelIII<<< blocks,max_threads >>>(d_idata, d_odata,
+					      accel_fact, jerk_fact,
+					      (double) size);
+  ErrorChecker::check_cuda_error("Error from device_resampleIII");
 }
 
 void device_resample(float * d_idata, float * d_odata,

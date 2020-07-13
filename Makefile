@@ -35,7 +35,10 @@ all: directories ${OBJECTS} ${EXE_FILES}
 ${OBJ_DIR}/kernels.o: ${SRC_DIR}/kernels.cu
 	${NVCC} -c ${NVCCFLAGS} ${INCLUDE} $<  -o $@
 
-${BIN_DIR}/peasoup: ${SRC_DIR}/pipeline_multi.cu ${OBJECTS}
+#${BIN_DIR}/peasoup: ${SRC_DIR}/pipeline_multi.cu ${OBJECTS}
+#	${NVCC} ${NVCCFLAGS} ${INCLUDE} ${LIBS} $^ -o $@
+
+${BIN_DIR}/peasoup: ${SRC_DIR}/pipeline_multi_jerk.cu ${OBJECTS}
 	${NVCC} ${NVCCFLAGS} ${INCLUDE} ${LIBS} $^ -o $@
 
 ${BIN_DIR}/ffaster: ${SRC_DIR}/ffa_pipeline.cu ${OBJECTS}

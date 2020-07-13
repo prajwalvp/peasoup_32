@@ -164,6 +164,60 @@ public:
 };
 //NOTE: +ve acceleration is away from observer
 
+class AccJerkDistiller: public BaseDistiller {
+private:
+  float tobs;
+  double tobs_over_c;
+  float tolerance;
+  
+  float correct_for_accjerk(double freq, double delta_acc, double delta_jerk){
+    return freq+delta_acc*freq*tobs_over_c + 0.5*(freq*delta_jerk*SPEED_OF_LIGHT)*(tobs_over_c)*(tobs_over_c);
+  }
+
+  void condition(std::vector<Candidate>& cands,int idx)
+  {
+    int ii,jj,kk;
+    double ratio,freq;
+    double fundi_freq = cands[idx].freq;
+    double fundi_acc = cands[idx].acc;
+    double fundi_jerk = cands[idx].jerk;
+    double acc_jerk_freq;
+    double delta_acc;
+    double delta_jerk;
+    double edge = fundi_freq*tolerance;
+    for (ii=idx+1;ii<size;ii++){
+      /*
+      if (cands[ii].nh > cands[idx].nh){
+	continue;
+	}*/
+
+      delta_acc = fundi_acc-cands[ii].acc;
+      delta_jerk = fundi_jerk-cands[ii].jerk;
+
+      acc_jerk_freq = correct_for_accjerk(fundi_freq,delta_acc,delta_jerk);
+
+      if (acc_jerk_freq>fundi_freq){
+	if (cands[ii].freq>fundi_freq-edge && cands[ii].freq<acc_jerk_freq+edge){
+	  if (keep_related)
+	    cands[idx].append(cands[ii]);
+	  unique[ii]=false;
+	}
+      } else {
+	if (cands[ii].freq<fundi_freq+edge && cands[ii].freq>acc_jerk_freq-edge){
+	  if (keep_related)
+	    cands[idx].append(cands[ii]);
+	  unique[ii]=false;
+	}
+      }
+    }
+  }
+  
+public:
+  AccJerkDistiller(float tobs, float tolerance, bool keep_related)
+    :BaseDistiller(keep_related),tobs(tobs),tolerance(tolerance){
+    tobs_over_c = tobs/SPEED_OF_LIGHT;
+  }
+};
 
 class DMDistiller: public BaseDistiller {
 private:
