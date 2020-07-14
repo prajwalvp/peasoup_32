@@ -327,7 +327,8 @@ inline __device__ unsigned long getAcceleratedIndexIII(double accel_fact, double
   return __double2ull_rn(id + id*accel_fact*(id-size) + (size/2.0-id)*(size/2.0-id)*jerk_fact*(size/2.0-id));
 }
 
-inline __device__ unsigned long getAcceleratedIndexIV(double accel_fact, double jerk_fact,double size,
+
+/*inline __device__ unsigned long getAcceleratedIndexIV(double accel_fact, double jerk_fact,double size,
 						      unsigned long id){
   signed long value = __double2ll_rn(id + id*accel_fact*(id-size) + (size/2.0-id)*(size/2.0-id)*jerk_fact*(size/2.0-id));
 
@@ -344,6 +345,8 @@ inline __device__ unsigned long getAcceleratedIndexIV(double accel_fact, double 
   unsigned long new_value = value;
   return new_value; 
 }
+*/
+
 
 __global__ void resample_kernel(float* input_d,
 				float* output_d,
@@ -386,12 +389,24 @@ __global__ void resample_kernelIII(float* input_d,
   for( unsigned long idx = blockIdx.x*blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x*gridDim.x )
   {
     unsigned long out_idx;
-    if(jerk_fact < 0.0)  
-        out_idx = getAcceleratedIndexIV(accel_fact,jerk_fact,size,idx);
+    unsigned long cnt1=0;
+    //if(jerk_fact < 0.0)  
+    //    out_idx = getAcceleratedIndexIV(accel_fact,jerk_fact,size,idx);
+    //else
+
+    out_idx = getAcceleratedIndexIII(accel_fact,jerk_fact,size,idx);
+    if (out_idx > size -1)
+    {
+        cnt1++;
+        output_d[idx] = 0.0; // pad with zero
+    }
+   //if (out_idx > size -1)
+   //      cnt2++;       
+   //printf("%lu %lu \n",idx,out_idx);
     else
-        out_idx = getAcceleratedIndexIII(accel_fact,jerk_fact,size,idx);
-    //printf("%lu %lu \n",idx,out_idx);
-    output_d[idx] = input_d[out_idx];
+    {
+        output_d[idx] = input_d[out_idx];
+    }
   }
 }
 

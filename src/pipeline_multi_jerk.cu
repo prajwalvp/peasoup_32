@@ -227,6 +227,10 @@ public:
                   std::cout << "Resampling to "<< acc_list[jj] << " m/s/s and " << jerk_list[kk]  << "m/s/s/s"  << std::endl;
                 resampler.resampleIII(d_tim,d_tim_r,size,acc_list[jj],jerk_list[kk]); // PVP changed resampleII to resampleIII and added jerk term input
 
+                
+                               
+
+
                 if (args.verbose)
                   std::cout << "Execute forward FFT" << std::endl;
                 r2cfft.execute(d_tim_r.get_data(),d_fseries.get_data());
