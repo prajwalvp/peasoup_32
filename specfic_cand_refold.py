@@ -36,7 +36,7 @@ def a_to_pdot(P_s, acc_ms2):
     return P_s * acc_ms2 /LIGHT_SPEED
 
 def j_to_pdd(P_s, jerk_ms3):
-    return 0.5*P_s * jerk_ms3 /LIGHT_SPEED
+    return 0.33*P_s * jerk_ms3 /LIGHT_SPEED
 
 def middle_epoch(epoch_start, no_of_samples, tsamp):
      return epoch_start +0.5*no_of_samples*tsamp 
@@ -123,7 +123,7 @@ def extract_and_fold(opts):
     #output_name2="refold_%d_dm0_acc_%.2f"%(opts.cand_no,folding_packet['acc'])
     print output_name
     #subprocess.check_call("prepfold  -ncpus 12 %s -noxwin -nosearch -nodmsearch -topo -p %s -pd %s -dm 0.0 -o %s %s"%(opts.po,str(folding_packet['period']),str(folding_packet['pdot']),output_name2,input_name),shell=True,cwd=opts.outp)
-    subprocess.check_call("prepfold  -ncpus 12  -noxwin  -nodmsearch -topo -p %s -pd %s -pdd %s -dm %s -o %s %s"%(str(folding_packet['period']),str(folding_packet['pdot']),str(folding_packet['pdd']),str(folding_packet['dm']),output_name,input_name),shell=True,cwd=opts.outp)
+    subprocess.check_call("prepfold  -ncpus 12 -n 128  -noxwin  -nodmsearch -topo -p %s -pd %s -pdd %s -dm %s -o %s %s"%(str(folding_packet['period']),str(folding_packet['pdot']),str(folding_packet['pdd']),str(folding_packet['dm']),output_name,input_name),shell=True,cwd=opts.outp)
  
 
                 

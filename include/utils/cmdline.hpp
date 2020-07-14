@@ -74,7 +74,7 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
 {
   try
     {
-      TCLAP::CmdLine cmd("Peasoup - a GPU pulsar search pipeline", ' ', "1.0");
+      TCLAP::CmdLine cmd("Paaysam - a GPU pulsar search pipeline sweeter than peasoup", ' ', "1.0 beta");
 
       TCLAP::ValueArg<std::string> arg_infilename("i", "inputfile",
 						  "File to process (.fil)",
