@@ -123,7 +123,7 @@ def extract_and_fold(opts):
     #output_name2="refold_%d_dm0_acc_%.2f"%(opts.cand_no,folding_packet['acc'])
     print output_name
     #subprocess.check_call("prepfold  -ncpus 12 %s -noxwin -nosearch -nodmsearch -topo -p %s -pd %s -dm 0.0 -o %s %s"%(opts.po,str(folding_packet['period']),str(folding_packet['pdot']),output_name2,input_name),shell=True,cwd=opts.outp)
-    subprocess.check_call("prepfold  -ncpus 12 -n 128  -noxwin  -nodmsearch -topo -p %s -pd %s -pdd %s -dm %s -o %s %s"%(str(folding_packet['period']),str(folding_packet['pdot']),str(folding_packet['pdd']),str(folding_packet['dm']),output_name,input_name),shell=True,cwd=opts.outp)
+    subprocess.check_call("prepfold  -ncpus 12 -n 128  -noxwin  -topo -p %s -pd %s -pdd %s -dm %s -o %s %s"%(str(folding_packet['period']),str(folding_packet['pdot']),str(folding_packet['pdd']),str(folding_packet['dm']),output_name,input_name),shell=True,cwd=opts.outp)
  
 
                 
