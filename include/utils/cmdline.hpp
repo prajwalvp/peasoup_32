@@ -10,10 +10,10 @@ struct CmdLineOptions {
   std::string zapfilename;
   int max_num_threads;
   unsigned int size;
-  //float dm_start;
-  //float dm_end;
-  //float dm_tol;
-  //float dm_pulse_width;
+  float dm_start;
+  float dm_end;
+  float dm_tol;
+  float dm_pulse_width;
   std::string dm_file; 
   float acc_start;
   float acc_end;
@@ -39,10 +39,10 @@ struct FFACmdLineOptions {
   std::string killfilename;
   int max_num_threads;
   unsigned int nstreams;
-//  float dm_start;
-//  float dm_end;
-//  float dm_tol;
-//  float dm_pulse_width;
+  float dm_start;
+  float dm_end;
+  float dm_tol;
+  float dm_pulse_width;
   float p_start;
   float p_end;
   float min_dc;
@@ -103,22 +103,22 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
 
       TCLAP::ValueArg<std::string> arg_dm_file("", "dm_file",
                                           "filename with dm list",
-                                          true, "", "string", cmd);
-/*      TCLAP::ValueArg<float> arg_dm_start("", "dm_start",
+                                          false, "none", "string", cmd);
+      TCLAP::ValueArg<float> arg_dm_start("", "dm_start",
                                           "First DM to dedisperse to",
                                           false, 0.0, "float", cmd);
 
       TCLAP::ValueArg<float> arg_dm_end("", "dm_end",
                                         "Last DM to dedisperse to",
-                                        false, 100.0, "float", cmd);
+                                        false, 0.0, "float", cmd);
 
       TCLAP::ValueArg<float> arg_dm_tol("", "dm_tol",
                                         "DM smearing tolerance (1.11=10%)",
-                                        false, 1.10, "float",cmd);
+                                        false, 1.11, "float",cmd);
 
       TCLAP::ValueArg<float> arg_dm_pulse_width("", "dm_pulse_width",
                                                 "Minimum pulse width for which dm_tol is valid",
-                                                false, 64.0, "float (us)",cmd); */
+                                                false, 64.0, "float (us)",cmd); 
 
       TCLAP::ValueArg<float> arg_acc_start("", "acc_start",
 					   "First acceleration to resample to",
@@ -185,9 +185,10 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
       args.limit             = arg_limit.getValue();
       args.size              = arg_size.getValue();
       args.dm_file           = arg_dm_file.getValue();
-      //args.dm_end            = arg_dm_end.getValue();
-      //args.dm_tol            = arg_dm_tol.getValue();
-      //args.dm_pulse_width    = arg_dm_pulse_width.getValue();
+      args.dm_end            = arg_dm_end.getValue();
+      args.dm_start            = arg_dm_start.getValue();
+      args.dm_tol            = arg_dm_tol.getValue();
+      args.dm_pulse_width    = arg_dm_pulse_width.getValue();
       args.acc_start         = arg_acc_start.getValue();
       args.acc_end           = arg_acc_end.getValue();
       args.acc_tol           = arg_acc_tol.getValue();

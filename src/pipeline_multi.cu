@@ -335,14 +335,22 @@ int main(int argc, char **argv)
   
   if (args.verbose)
     std::cout << "Generating DM list" << std::endl;
-  //dedisperser.generate_dm_list(args.dm_start,args.dm_end,args.dm_pulse_width,args.dm_tol);
-  //dedisperser.generate_dm_list_from_file(args.dm_file);
-  //std::vector<float> dm_list = dedisperser.get_dm_list();
-  std::vector<float> vecOfDMs;
-  bool result = getFileContent(args.dm_file, vecOfDMs);
-  //if (result){
-  std::vector<float> dm_list = vecOfDMs;
-  dedisperser.set_dm_list(dm_list);
+  std::vector<float> dm_list;
+  if (args.dm_file=="none")
+  {
+
+      dedisperser.generate_dm_list(args.dm_start,args.dm_end,args.dm_pulse_width,args.dm_tol);
+      //std::vector<float> dm_list = dedisperser.get_dm_list();
+      dm_list = dedisperser.get_dm_list();
+
+  }
+  else
+  { 
+      std::vector<float> vecOfDMs;
+      bool result = getFileContent(args.dm_file, vecOfDMs);
+      dm_list = vecOfDMs;
+      dedisperser.set_dm_list(dm_list);
+  } 
        
   
   if (args.verbose){
