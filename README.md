@@ -15,4 +15,3 @@ There are two other branches in this repository which has been setup to adaptive
 2. **jerk_searcher**: This branch has a modified source code to also do a time domain resampling in the jerk phase space too before searching. 
 
 
-=======
