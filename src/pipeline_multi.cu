@@ -210,35 +210,35 @@ public:
       PUSH_NVTX_RANGE("Acceleration-Loop",1)
 
       for (int jj=0;jj<acc_list.size();jj++){
-	    if (args.verbose)
-	      std::cout << "Resampling to "<< acc_list[jj] << " m/s/s" << std::endl;
-	    resampler.resampleII(d_tim,d_tim_r,size,acc_list[jj]);
+  	    if (args.verbose)
+  	      std::cout << "Resampling to "<< acc_list[jj] << " m/s/s" << std::endl;
+  	    resampler.resampleII(d_tim,d_tim_r,size,acc_list[jj]);
 
-	    if (args.verbose)
-	      std::cout << "Execute forward FFT" << std::endl;
-	    r2cfft.execute(d_tim_r.get_data(),d_fseries.get_data());
+  	    if (args.verbose)
+  	      std::cout << "Execute forward FFT" << std::endl;
+  	    r2cfft.execute(d_tim_r.get_data(),d_fseries.get_data());
 
-	    if (args.verbose)
-	      std::cout << "Form interpolated power spectrum" << std::endl;
-	    former.form_interpolated(d_fseries,pspec);
+  	    if (args.verbose)
+  	      std::cout << "Form interpolated power spectrum" << std::endl;
+  	    former.form_interpolated(d_fseries,pspec);
 
-	    if (args.verbose)
-	      std::cout << "Normalise power spectrum" << std::endl;
-	    stats::normalise(pspec.get_data(),mean*size,std*size,size/2+1);
+  	    if (args.verbose)
+  	      std::cout << "Normalise power spectrum" << std::endl;
+  	    stats::normalise(pspec.get_data(),mean*size,std*size,size/2+1);
 
-	    if (args.verbose)
-	      std::cout << "Harmonic summing" << std::endl;
-	    harm_folder.fold(pspec);
-		
-	    if (args.verbose)
-	      std::cout << "Finding peaks" << std::endl;
-	    SpectrumCandidates trial_cands(tim.get_dm(),ii,acc_list[jj]);
-	    cand_finder.find_candidates(pspec,trial_cands);
-	    cand_finder.find_candidates(sums,trial_cands);
-	
-	    if (args.verbose)
-	      std::cout << "Distilling harmonics" << std::endl;
-	      accel_trial_cands.append(harm_finder.distill(trial_cands.cands));
+  	    if (args.verbose)
+  	      std::cout << "Harmonic summing" << std::endl;
+  	    harm_folder.fold(pspec);
+  		
+  	    if (args.verbose)
+  	      std::cout << "Finding peaks" << std::endl;
+  	    SpectrumCandidates trial_cands(tim.get_dm(),ii,acc_list[jj]);
+  	    cand_finder.find_candidates(pspec,trial_cands);
+  	    cand_finder.find_candidates(sums,trial_cands);
+  	
+  	    if (args.verbose)
+  	      std::cout << "Distilling harmonics" << std::endl;
+  	      accel_trial_cands.append(harm_finder.distill(trial_cands.cands));
       }
 	  POP_NVTX_RANGE
       if (args.verbose)
@@ -307,6 +307,16 @@ int main(int argc, char **argv)
   if (!read_cmdline_options(args,argc,argv))
     ErrorChecker::throw_error("Failed to parse command line arguments.");
 
+  if (args.start_frac > 1.0 || args.end_frac > 1.0) 
+    ErrorChecker::throw_error("Fraction cannot be greater than 1!");
+
+  if (args.start_frac < 0.0 || args.end_frac < 0.0) 
+    ErrorChecker::throw_error("Fraction cannot be less than 0!");
+
+  if (args.start_frac > args.end_frac)
+    ErrorChecker::throw_error("Starting fraction cannot be greater than end fraction");
+
+
   int nthreads = std::min(Utils::gpu_count(),args.max_num_threads);
   nthreads = std::max(1,nthreads);
 
@@ -319,14 +329,35 @@ int main(int argc, char **argv)
     printf("Reading data from %s\n",args.infilename.c_str());
   
   timers["reading"].start();
-  SigprocFilterbank filobj(filename);
+  SigprocFilterbank filobj(filename,args.start_frac,args.end_frac);
   timers["reading"].stop();
     
   if (args.progress_bar){
     printf("Complete (execution time %.2f s)\n",timers["reading"].getTime());
   }
 
+
   Dedisperser dedisperser(filobj,nthreads);
+  DMDistiller dm_still(args.freq_tol,true);
+  HarmonicDistiller harm_still(args.freq_tol,args.max_harm,true,false);
+  CandidateCollection dm_cands;
+
+  unsigned int size;
+   
+ 
+  if (args.size==0)
+    size = Utils::prev_power_of_two(filobj.get_nsamps());   
+    
+  else
+    //size = std::min(args.size,filobj.get_nsamps());
+    size = args.size;
+  if (args.verbose)
+    std::cout << "Setting transform length to " << size << " points" << std::endl;
+
+  AccelerationPlan acc_plan(args.acc_start, args.acc_end, args.acc_tol,
+            args.acc_pulse_width, size, filobj.get_tsamp(),
+            filobj.get_cfreq(), filobj.get_foff()); 
+
   if (args.killfilename!=""){
     if (args.verbose)
       std::cout << "Using killfile: " << args.killfilename << std::endl;
@@ -335,83 +366,82 @@ int main(int argc, char **argv)
   
   if (args.verbose)
     std::cout << "Generating DM list" << std::endl;
-  std::vector<float> dm_list;
-  if (args.dm_file=="none")
-  {
+  std::vector<float> full_dm_list;
 
-      dedisperser.generate_dm_list(args.dm_start,args.dm_end,args.dm_pulse_width,args.dm_tol);
-      //std::vector<float> dm_list = dedisperser.get_dm_list();
-      dm_list = dedisperser.get_dm_list();
+  if (args.dm_file=="none") {
+
+    dedisperser.generate_dm_list(args.dm_start,args.dm_end,args.dm_pulse_width,args.dm_tol);
+    full_dm_list = dedisperser.get_dm_list();
 
   }
-  else
-  { 
-      std::vector<float> vecOfDMs;
-      bool result = getFileContent(args.dm_file, vecOfDMs);
-      dm_list = vecOfDMs;
-      dedisperser.set_dm_list(dm_list);
-  } 
-       
-  
-  if (args.verbose){
-    std::cout << dm_list.size() << " DM trials" << std::endl;
-    for (int ii=0;ii<dm_list.size();ii++)
-      std::cout << dm_list[ii] << std::endl;
+  else { 
+      bool result = getFileContent(args.dm_file, full_dm_list); 
+  }
+
+  int ndm_trial_gulp = args.ndm_trial_gulp != -1 ?  args.ndm_trial_gulp : full_dm_list.size();
+
+  for(int idx=0; idx< full_dm_list.size(); idx += ndm_trial_gulp){
+
+    int start = idx;
+    int end   = idx + ndm_trial_gulp; 
+
+    end = end > full_dm_list.size() ? full_dm_list.size() : end;
+
+    if(args.verbose)
+    std::cout << "Gulp start: " << start << " end: " << end << std::endl;
+
+    std::vector<float> dm_list_chunk(full_dm_list.begin() + start,  full_dm_list.begin() + end);
+    dedisperser.set_dm_list(dm_list_chunk);
+
+    if (args.verbose){
+    std::cout << dm_list_chunk.size() << " DM trials" << std::endl;
+    for (int ii=0;ii<dm_list_chunk.size();ii++)
+      std::cout << dm_list_chunk[ii] << std::endl;
     std::cout << "Executing dedispersion" << std::endl;
+    }
+
+    if (args.progress_bar)
+      printf("Starting dedispersion...\n");
+
+    timers["dedispersion"].start();
+    PUSH_NVTX_RANGE("Dedisperse",3)
+    DispersionTrials<DedispOutputType> trials(filobj.get_tsamp());
+    dedisperser.dedisperse(trials);
+    POP_NVTX_RANGE
+    timers["dedispersion"].stop();
+
+    //Write out a dedispersed time series file from the dedispersion tials
+    //  unsigned int* data_ptr = trials[0].get_data();
+    //  Utils::dump_host_buffer<unsigned int>(data_ptr,trials.get_nsamps(),"dedispersed_timeseries_new");
+
+    if (args.progress_bar)
+      printf("Complete (execution time %.2f s)\n",timers["dedispersion"].getTime());
+      
+    //Multithreading commands
+    timers["searching"].start();
+    std::vector<Worker*> workers(nthreads);
+    std::vector<pthread_t> threads(nthreads);
+    DMDispenser dispenser(trials);
+    if (args.progress_bar)
+      dispenser.enable_progress_bar();
+    
+    for (int ii=0;ii<nthreads;ii++){
+      workers[ii] = (new Worker(trials,dispenser,acc_plan,args,size,ii));
+      pthread_create(&threads[ii], NULL, launch_worker_thread, (void*) workers[ii]);
+    }
+
+    if(args.verbose)
+      std::cout << "Joining worker threads" << std::endl;
+    
+    for (int ii=0; ii<nthreads; ii++){
+      pthread_join(threads[ii],NULL);
+      dm_cands.append(workers[ii]->dm_trial_cands.cands);
+      delete workers[ii];
+    }
+    timers["searching"].stop();
+
+
   }
-
-  if (args.progress_bar)
-    printf("Starting dedispersion...\n");
-
-  timers["dedispersion"].start();
-  PUSH_NVTX_RANGE("Dedisperse",3)
-  DispersionTrials<DedispOutputType> trials = dedisperser.dedisperse();
-  POP_NVTX_RANGE
-  timers["dedispersion"].stop();
-
-
-//Write out a dedispersed time series file from the dedispersion tials
-//  unsigned int* data_ptr = trials[0].get_data();
-//  Utils::dump_host_buffer<unsigned int>(data_ptr,trials.get_nsamps(),"dedispersed_timeseries_new");
-
-  if (args.progress_bar)
-    printf("Complete (execution time %.2f s)\n",timers["dedispersion"].getTime());
-
-  unsigned int size;
-  if (args.size==0)
-    size = Utils::prev_power_of_two(filobj.get_nsamps());
-  else
-    //size = std::min(args.size,filobj.get_nsamps());
-    size = args.size;
-  if (args.verbose)
-    std::cout << "Setting transform length to " << size << " points" << std::endl;
-  
-  AccelerationPlan acc_plan(args.acc_start, args.acc_end, args.acc_tol,
-			    args.acc_pulse_width, size, filobj.get_tsamp(),
-			    filobj.get_cfreq(), filobj.get_foff()); 
-  
-  
-  //Multithreading commands
-  timers["searching"].start();
-  std::vector<Worker*> workers(nthreads);
-  std::vector<pthread_t> threads(nthreads);
-  DMDispenser dispenser(trials);
-  if (args.progress_bar)
-    dispenser.enable_progress_bar();
-  
-  for (int ii=0;ii<nthreads;ii++){
-    workers[ii] = (new Worker(trials,dispenser,acc_plan,args,size,ii));
-    pthread_create(&threads[ii], NULL, launch_worker_thread, (void*) workers[ii]);
-  }
-  
-  DMDistiller dm_still(args.freq_tol,true);
-  HarmonicDistiller harm_still(args.freq_tol,args.max_harm,true,false);
-  CandidateCollection dm_cands;
-  for (int ii=0; ii<nthreads; ii++){
-    pthread_join(threads[ii],NULL);
-    dm_cands.append(workers[ii]->dm_trial_cands.cands);
-  }
-  timers["searching"].stop();
   
   if (args.verbose)
     std::cout << "Distilling DMs" << std::endl;
@@ -425,17 +455,17 @@ int main(int argc, char **argv)
   if (args.verbose)
     std::cout << "Setting up time series folder" << std::endl;
   
-  MultiFolder folder(dm_cands.cands,trials);
-  timers["folding"].start();
-  if (args.progress_bar)
-    folder.enable_progress_bar();
+  // MultiFolder folder(dm_cands.cands,trials);
+  // timers["folding"].start();
+  // if (args.progress_bar)
+  //   folder.enable_progress_bar();
 
-  if (args.npdmp > 0){
-    if (args.verbose)
-      std::cout << "Folding top "<< args.npdmp <<" cands" << std::endl;
-    folder.fold_n(args.npdmp);
-  }
-  timers["folding"].stop();
+  // if (args.npdmp > 0){
+  //   if (args.verbose)
+  //     std::cout << "Folding top "<< args.npdmp <<" cands" << std::endl;
+  //   folder.fold_n(args.npdmp);
+  // }
+  // timers["folding"].stop();
 
   if (args.verbose)
     std::cout << "Writing output files" << std::endl;
@@ -445,13 +475,13 @@ int main(int argc, char **argv)
   dm_cands.cands.resize(new_size);
 
   CandidateFileWriter cand_files(args.outdir);
-  cand_files.write_binary(dm_cands.cands,"candidates.peasoup");
+  //cand_files.write_binary(dm_cands.cands,"candidates.peasoup");
   
   OutputFileWriter stats;
   stats.add_misc_info();
   stats.add_header(filename);
   stats.add_search_parameters(args);
-  stats.add_dm_list(dm_list);
+  stats.add_dm_list(full_dm_list);
   
   std::vector<float> acc_list;
   acc_plan.generate_accel_list(0.0,acc_list);

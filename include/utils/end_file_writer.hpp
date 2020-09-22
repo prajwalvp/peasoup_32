@@ -65,6 +65,8 @@ public:
     search_options.append(XML::Element("dm_end",args.dm_end));
     search_options.append(XML::Element("dm_tol",args.dm_tol));
     search_options.append(XML::Element("dm_pulse_width",args.dm_pulse_width));
+    search_options.append(XML::Element("start_frac",args.start_frac));
+    search_options.append(XML::Element("end_frac",args.end_frac));
     search_options.append(XML::Element("acc_start",args.acc_start));
     search_options.append(XML::Element("acc_end",args.acc_end));
     search_options.append(XML::Element("acc_tol",args.acc_tol));

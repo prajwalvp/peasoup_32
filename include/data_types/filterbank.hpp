@@ -215,21 +215,42 @@ public:
 
     \param filename Path to a valid sigproc filterbank file.
   */
-  SigprocFilterbank(std::string filename)
+  SigprocFilterbank(std::string filename, float start_frac, float end_frac)
   {
     std::ifstream infile;
     SigprocHeader hdr;
     infile.open(filename.c_str(),std::ifstream::in | std::ifstream::binary);
     ErrorChecker::check_file_error(infile, filename);
+
     // Read the header
     read_header(infile,hdr);
-    size_t input_size = (size_t) hdr.nsamples*hdr.nbits*hdr.nchans/8;
+
+    //  ********* old ****************
+    //size_t input_size = (size_t) hdr.nsamples*hdr.nbits*hdr.nchans/8;
+    //this->data = new unsigned char [input_size];
+    //infile.seekg(hdr.size, std::ios::beg);
+    // Read the data 
+    //infile.read(reinterpret_cast<char*>(this->data), input_size);
+    // ********** old ***************
+
+    //set input size based  on start and end fractions
+    unsigned int start_samp = hdr.nsamples * start_frac;
+    unsigned int end_samp = hdr.nsamples * end_frac;
+
+    size_t input_size = (size_t) (end_samp - start_samp)*hdr.nbits*hdr.nchans/8;
     this->data = new unsigned char [input_size];
-    infile.seekg(hdr.size, std::ios::beg);
+    //offset by header plus start fraction
+    unsigned int offset = hdr.size + static_cast<unsigned int>(start_frac*hdr.nsamples*hdr.nbits*hdr.nchans/8);
+    infile.seekg(offset,std::ios::beg);
     // Read the data
     infile.read(reinterpret_cast<char*>(this->data), input_size);
+     
+         
+
+
     // Set the metadata
-    this->nsamps = hdr.nsamples;
+    //this->nsamps = hdr.nsamples;
+    this->nsamps = end_samp - start_samp;
     this->nchans = hdr.nchans;
     this->tsamp = hdr.tsamp;
     this->nbits = hdr.nbits;

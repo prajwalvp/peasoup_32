@@ -86,6 +86,8 @@ public:
     search_options.append(XML::Element("acc_start",args.acc_start));
     search_options.append(XML::Element("acc_end",args.acc_end));
     search_options.append(XML::Element("acc_tol",args.acc_tol));
+    search_options.append(XML::Element("start_frac",args.start_frac));
+    search_options.append(XML::Element("end_frac",args.end_frac));
     search_options.append(XML::Element("acc_pulse_width",args.acc_pulse_width));
     search_options.append(XML::Element("boundary_5_freq",args.boundary_5_freq));
     search_options.append(XML::Element("boundary_25_freq",args.boundary_25_freq));

@@ -10,11 +10,14 @@ struct CmdLineOptions {
   std::string zapfilename;
   int max_num_threads;
   unsigned int size;
+  float start_frac;
+  float end_frac;
   float dm_start;
   float dm_end;
   float dm_tol;
   float dm_pulse_width;
   std::string dm_file; 
+  int ndm_trial_gulp;
   float acc_start;
   float acc_end;
   float acc_tol;
@@ -119,6 +122,16 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
       TCLAP::ValueArg<float> arg_dm_pulse_width("", "dm_pulse_width",
                                                 "Minimum pulse width for which dm_tol is valid",
                                                 false, 64.0, "float (us)",cmd); 
+      TCLAP::ValueArg<float> arg_start_frac("", "start_frac",
+                                          "Starting point of file to search from as a fraction of file length (defaults to 0.0)",
+                                          false, 0.0, "float", cmd);
+      TCLAP::ValueArg<float> arg_end_frac("", "end_frac",
+                                          "End point of file to search upto as a fraction of file length (defaults to 1.0)",
+                                          false, 1.0, "float", cmd);
+
+      TCLAP::ValueArg<float> arg_ndm_trial_gulp("", "ndm_trial_gulp",
+                                                "Number of DM trials to dedisperse at once (useful for RAM limitations), default: all",
+                                                false, -1, "int",cmd); 
 
       TCLAP::ValueArg<float> arg_acc_start("", "acc_start",
 					   "First acceleration to resample to",
@@ -186,9 +199,12 @@ bool read_cmdline_options(CmdLineOptions& args, int argc, char **argv)
       args.size              = arg_size.getValue();
       args.dm_file           = arg_dm_file.getValue();
       args.dm_end            = arg_dm_end.getValue();
-      args.dm_start            = arg_dm_start.getValue();
+      args.dm_start          = arg_dm_start.getValue();
       args.dm_tol            = arg_dm_tol.getValue();
       args.dm_pulse_width    = arg_dm_pulse_width.getValue();
+      args.start_frac          = arg_start_frac.getValue();
+      args.end_frac          = arg_end_frac.getValue();      
+      args.ndm_trial_gulp    = arg_ndm_trial_gulp.getValue();
       args.acc_start         = arg_acc_start.getValue();
       args.acc_end           = arg_acc_end.getValue();
       args.acc_tol           = arg_acc_tol.getValue();
